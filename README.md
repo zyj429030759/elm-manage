@@ -1,2 +1,15 @@
 # elm-manage
-饿了么后台管理系统+vue2
+
+elm 营销后台
+
+# 技术栈
+
+vue3 + vue-router + pinia
+
+# 初始化
+
+node 16+
+
+```
+npm init vue@latest
+```
