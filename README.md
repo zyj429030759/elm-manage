@@ -2,11 +2,11 @@
 
 elm 营销后台
 
-# 技术栈
+# 项目技术栈
 
-vue3 + vue-router + pinia
+vue3 + vue-router + pinia + axios
 
-# 初始化
+# 项目初始化
 
 node 16+
 
