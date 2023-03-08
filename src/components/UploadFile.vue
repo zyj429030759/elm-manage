@@ -8,11 +8,11 @@
       ref="progressRef"
     >
       <div class="progress-bar">
-        <button>取消</button>
+        <button @click="handleCancel">取消</button>
       </div>
     </div>
     <div v-else-if="uploadStatus === 3" class="upload-result">
-      <button>X</button>
+      <button @click="handleClose">X</button>
     </div>
     <img v-show="uploadStatus !== 1" :src="previewUrl" alt="" class="preview" ref="imgRef" />
     <input type="file" ref="fileRef" />
@@ -26,6 +26,7 @@ let previewUrl = $ref('')
 const fileRef = $ref()
 const progressRef = $ref()
 const imgRef = $ref()
+let xhr = null
 function selectFile() {
   fileRef.click()
   fileRef.onchange = () => {
@@ -38,12 +39,17 @@ function selectFile() {
     reader.readAsDataURL(file) // 读取选中的文件，生成可以访问的data:url(base64编码)
     // 开始发送请求
     uploadStatus = 2
-    const xhr = new XMLHttpRequest()
+    if (xhr) {
+      xhr.abort()
+      xhr = null
+    }
+    xhr = new XMLHttpRequest()
     xhr.addEventListener('load', () => {
       // 上传完成后触发
       const resp = JSON.parse(xhr.responseText).data
       previewUrl.value = resp
       uploadStatus = 3
+      xhr = null
     })
     xhr.addEventListener('progress', (e) => {
       // 上传中触发
@@ -57,6 +63,16 @@ function selectFile() {
     // 发送请求
     xhr.send(formData)
   }
+}
+function handleCancel() {
+  if (xhr) {
+    xhr.abort()
+    uploadStatus = 1
+  }
+}
+function handleClose() {
+  previewUrl = ''
+  uploadStatus = 1
 }
 </script>
 
