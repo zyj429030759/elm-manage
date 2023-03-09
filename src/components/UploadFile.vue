@@ -15,7 +15,7 @@
       <button @click="handleClose">X</button>
     </div>
     <img v-show="uploadStatus !== 1" :src="previewUrl" alt="" class="preview" ref="imgRef" />
-    <input type="file" ref="fileRef" />
+    <input type="file" ref="fileRef" multiple />
   </div>
 </template>
 
@@ -34,6 +34,7 @@ function selectFile() {
     const file = fileRef.files[0]
     const reader = new FileReader() // 文件读取器
     reader.onload = (e) => {
+      // 本地预览
       imgRef.src = e.target.result
     }
     reader.readAsDataURL(file) // 读取选中的文件，生成可以访问的data:url(base64编码)
@@ -46,9 +47,15 @@ function selectFile() {
     xhr = new XMLHttpRequest()
     xhr.addEventListener('load', () => {
       // 上传完成后触发
-      const resp = JSON.parse(xhr.responseText).data
-      previewUrl.value = resp
-      uploadStatus = 3
+      const resp = JSON.parse(xhr.responseText)
+      if (xhr.status >= 200 && xhr.status < 300) {
+        previewUrl = resp.data
+        uploadStatus = 3
+      } else {
+        alert(resp.msg || '出错啦')
+        uploadStatus = 1
+        previewUrl = ''
+      }
       xhr = null
     })
     xhr.addEventListener('progress', (e) => {
@@ -56,10 +63,13 @@ function selectFile() {
       const percent = Math.floor((e.loaded / e.total) * 100)
       progressRef.style.setProperty('--percent', percent)
     })
-    xhr.open('POST', 'http://127.0.0.1:3000/api/upload/base64')
+    xhr.open('POST', '/api/upload/single')
     // 自动构建multipart/form-data格式的消息体
     const formData = new FormData()
     formData.append('avatar', file)
+    // Array.prototype.forEach.call(fileRef.files, (f) => {
+    //   formData.append('photos', f)
+    // })
     // 发送请求
     xhr.send(formData)
   }

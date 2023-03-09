@@ -1,6 +1,5 @@
-import { fileURLToPath, URL } from 'node:url'
-
 import vue from '@vitejs/plugin-vue'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
@@ -12,7 +11,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': path.resolve(__dirname, './src')
     }
   },
   server: {
@@ -20,7 +19,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:3000',
-        changeOrigin: true
+        changeOrigin: true // 设置访问目标允许跨域
       }
     }
   }
