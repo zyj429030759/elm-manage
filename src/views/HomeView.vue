@@ -1,9 +1,9 @@
 <script setup>
-import HelloWorld from '../components/HelloWorld.vue'
+import UploadFile from '../components/UploadFile.vue'
 </script>
 
 <template>
   <main>
-    <HelloWorld msg="hello vue3" />
+    <UploadFile upload-type="single" />
   </main>
 </template>

@@ -15,7 +15,7 @@
       <button @click="handleClose">X</button>
     </div>
     <img v-show="uploadStatus !== 1" :src="previewUrl" alt="" class="preview" ref="imgRef" />
-    <input type="file" ref="fileRef" multiple />
+    <input type="file" ref="fileRef" :multiple="uploadType === 'multi'" />
   </div>
 </template>
 
@@ -27,19 +27,40 @@ const fileRef = $ref()
 const progressRef = $ref()
 const imgRef = $ref()
 let xhr = null
+
+const { uploadType } = defineProps({
+  uploadType: {
+    type: String,
+    default: 'single'
+  }
+})
 function selectFile() {
   fileRef.click()
   fileRef.onchange = () => {
     // 读到选中后文件的file对象[本质是blob对象]
-    const file = fileRef.files[0]
-    const reader = new FileReader() // 文件读取器
-    reader.onload = (e) => {
-      // 本地预览
-      imgRef.src = e.target.result
+    let file = null
+    if (uploadType !== 'multi') {
+      // 单文件上传
+      file = fileRef.files[0]
+      const reader = new FileReader() // 文件读取器
+      reader.onload = (e) => {
+        // 文件读取完成，本地预览
+        imgRef.src = e.target.result
+        uploadStatus = 2
+        // xhr.send(
+        //   JSON.stringify({
+        //     avatar: e.target.result.split(',')[1],
+        //     ext: '.jpg'
+        //   })
+        // )
+      }
+      reader.readAsDataURL(file) // 读取选中的文件，生成可以访问的data:url(base64编码)
+      // 生成ArrayBuffer对象，可以直接在网络中传输二进制内容
+      // reader.readAsArrayBuffer(file)
+    } else {
+      file = fileRef.files
     }
-    reader.readAsDataURL(file) // 读取选中的文件，生成可以访问的data:url(base64编码)
     // 开始发送请求
-    uploadStatus = 2
     if (xhr) {
       xhr.abort()
       xhr = null
@@ -48,10 +69,14 @@ function selectFile() {
     xhr.addEventListener('load', () => {
       // 上传完成后触发
       const resp = JSON.parse(xhr.responseText)
+      // 上传成功
       if (xhr.status >= 200 && xhr.status < 300) {
-        previewUrl = resp.data
-        uploadStatus = 3
+        if (uploadType !== 'multi') {
+          previewUrl = resp.data
+          uploadStatus = 3
+        }
       } else {
+        // 上传失败
         alert(resp.msg || '出错啦')
         uploadStatus = 1
         previewUrl = ''
@@ -60,16 +85,23 @@ function selectFile() {
     })
     xhr.addEventListener('progress', (e) => {
       // 上传中触发
-      const percent = Math.floor((e.loaded / e.total) * 100)
-      progressRef.style.setProperty('--percent', percent)
+      if (uploadType !== 'multi') {
+        const percent = Math.floor((e.loaded / e.total) * 100)
+        progressRef.style.setProperty('--percent', percent)
+      }
     })
-    xhr.open('POST', '/api/upload/single')
+    xhr.open('POST', `/api/upload/${uploadType}`)
+    // xhr.setRequestHeader('x-ext', '.jpg')
+    // xhr.setRequestHeader('content-type', 'application/json')
     // 自动构建multipart/form-data格式的消息体
     const formData = new FormData()
-    formData.append('avatar', file)
-    // Array.prototype.forEach.call(fileRef.files, (f) => {
-    //   formData.append('photos', f)
-    // })
+    if (uploadType !== 'multi') {
+      formData.append('avatar', file)
+    } else {
+      Array.prototype.forEach.call(fileRef.files, (f) => {
+        formData.append('photos', f)
+      })
+    }
     // 发送请求
     xhr.send(formData)
   }
